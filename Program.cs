@@ -11,17 +11,11 @@ namespace CombineCSV
             Vehicle
 		}
 
-        public enum CarCode // NO Enum with CarCode!
-        {
-            CN7,
-            DN8,
-            TL,
-            DH
-		}
-
         static void Main(string[] args)
 		{
-            string logPath = "/home/cody/workspace/VALUES/";
+            string logPath = "D:/CombineCSV/VALUES/";
+            //string logPath = "/home/cody/workspace/VALUES/"; For Linux file system
+
             string dest = string.Empty;
             System.Collections.Generic.List<string> csvPaths = null;
             bool passFlag = false;
@@ -37,7 +31,6 @@ namespace CombineCSV
 
                 checker = System.DateTime.TryParseExact(startInput, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out System.DateTime startDT);
                 checker = System.DateTime.TryParseExact(endInput, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out System.DateTime endDT);
-
                 if (checker == false)
                 {
                     System.Console.WriteLine("DateTime Parse failed.");
@@ -57,7 +50,7 @@ namespace CombineCSV
                         case CsvCode.Gap:
                             System.Console.WriteLine("Combining 1.Gap CSV files...");
                             System.Console.WriteLine("1. CN7");
-                            csvPaths = SearchCSV(logPath, startDT, endDT, CarCode.CN7, CsvCode.Gap);
+                            csvPaths = SearchCSV(logPath, startDT, endDT, "CN7", CsvCode.Gap);
 
                             System.Console.Write("Directory to store results.\n>");
                             dest = System.Console.ReadLine();
@@ -69,7 +62,7 @@ namespace CombineCSV
                         case CsvCode.Glass:
                             System.Console.WriteLine("Combining 2.Glass CSV files...");
                             System.Console.WriteLine("1. CN7");
-                            csvPaths = SearchCSV(logPath, startDT, endDT, CarCode.CN7, CsvCode.Glass);
+                            csvPaths = SearchCSV(logPath, startDT, endDT, "CN7", CsvCode.Glass);
 
                             System.Console.Write("Directory to store results.\n>");
                             dest = System.Console.ReadLine();
@@ -80,7 +73,7 @@ namespace CombineCSV
                         case CsvCode.Vehicle:
                             System.Console.WriteLine("Combining 3.Vehicle CSV files...");
                             System.Console.WriteLine("1. CN7");
-                            csvPaths = SearchCSV(logPath, startDT, endDT, CarCode.CN7, CsvCode.Vehicle);
+                            csvPaths = SearchCSV(logPath, startDT, endDT, "CN7", CsvCode.Vehicle);
 
                             System.Console.Write("Directory to store results.\n>");
                             dest = System.Console.ReadLine();
@@ -96,121 +89,48 @@ namespace CombineCSV
 		}
 
 
-        static System.Collections.Generic.List<string> SearchCSV(string logPath, System.DateTime startDT, System.DateTime endDT, CarCode car, CsvCode csv) // input datetime
+        static System.Collections.Generic.List<string> SearchCSV(string logPath, System.DateTime startDT, System.DateTime endDT, string carCode, CsvCode csv)
         {
+            System.TimeSpan timeCheck = startDT - endDT;
+            System.TimeSpan zero = System.TimeSpan.Zero;
+            if (timeCheck.CompareTo(zero) > 0)
+            {
+                System.DateTime tmp = startDT;
+                startDT = endDT;
+                endDT = tmp;
+            }
+
             System.IO.DirectoryInfo di = new System.IO.DirectoryInfo(logPath);
             System.Collections.Generic.List<string> datePaths = new System.Collections.Generic.List<string>();
-            bool beginFlag = false;
-            bool endFlag = false;
 
             var directoryNames = di.EnumerateDirectories()
                     .OrderBy(d => d.Name)
                     .Select(d => d.Name)
                     .ToList();
 
-            int refNum = directoryNames.Count - 1;
-            int cenNum = refNum / 2;
-            double x = 0;
-
-            for (;beginFlag == false;)
+            int startIndex = directoryNames.BinarySearch(startDT.ToString("yyyyMMdd"));
+            if (startIndex < 0)
             {
-                System.DateTime.TryParseExact(directoryNames[cenNum], "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out System.DateTime centerDT);
-                if (System.DateTime.Compare(startDT, centerDT) == 0 || cenNum <= 0 || cenNum >= directoryNames.Count - 1)
-                {
-                    datePaths.Add(directoryNames[cenNum]);
-                    beginFlag = true;
-                    break;
-                }
-                else if (System.DateTime.Compare(startDT, centerDT) < 0) // startDT is later!
-                {
-                    refNum = cenNum;
-                    cenNum = cenNum / 2;
-                    System.Console.WriteLine("yyyyyyy :" + cenNum);
-                }
-                else if (System.DateTime.Compare(startDT, centerDT) > 0) // startDT is earlier.
-                {
-                    x = ((double)refNum - (double)cenNum) / 2 + 0.5;
-                    cenNum += (int)x;
-                    System.Console.WriteLine("xxxxxxxxx :"+ cenNum);
-                }
+                startIndex = ~startIndex;
             }
 
-
-            for (;endFlag == false;)
+            int endIndex = directoryNames.BinarySearch(endDT.ToString("yyyyMMdd"));
+            if (endIndex < 0)
             {
-                cenNum++;
+                endIndex = ~endIndex;
+            }
+            else
+            {
+                endIndex += 1; 
+			}
 
-                if (cenNum >= directoryNames.Count)
-                {
-                    endFlag = true;
-                    break;
-                }
-
-                System.DateTime.TryParseExact(directoryNames[cenNum], "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out System.DateTime compareDT);
-                if (System.DateTime.Compare(endDT, compareDT) >= 0)
-                {
-                    datePaths.Add(directoryNames[cenNum]);
-                }
-                else
-                {
-                    endFlag = true;
-                    break;
-                }
+            for (int k = 0;startIndex < endIndex; startIndex++, k++)
+            {
+                datePaths.Add(directoryNames[startIndex]);
             }
 
-
-            // Print the list.
-            foreach (var datePath in datePaths)
-            {
-                System.Console.WriteLine(datePath);
-            }
-
-            System.Console.WriteLine("Press Ctrl+C key to EXIT.");
-            System.Console.ReadKey();
-
-
-
-
-
-            /*
-            for (int i = 0; i < directoryNames.Count; i++)
-            {
-                System.DateTime.TryParseExact(directoryNames[i], "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out System.DateTime compareDT);
-
-                if (System.DateTime.Compare(startDT, compareDT) <= 0 && beginFlag == false)
-                {
-                    datePaths.Add(directoryNames[i]);
-                    beginFlag = true;
-                }
-                else if (System.DateTime.Compare(compareDT, endDT) <= 0 && beginFlag == true)
-                {
-                    datePaths.Add(directoryNames[i]);
-                }
-                else if (System.DateTime.Compare(compareDT, endDT) > 0)
-                {
-                    System.Console.WriteLine("Done.");
-                    break;
-		       }
-            }
-            */
-
+            string carPath = '/' + carCode;
             string csvPath = string.Empty;
-            string carPath = string.Empty;
-            switch (car)
-            {
-                case CarCode.CN7:
-                    carPath = "/CN7";
-                    break;
-                case CarCode.DH:
-                    carPath = "/DH";
-                    break;
-                case CarCode.DN8:
-                    carPath = "/DN8";
-                    break;
-                case CarCode.TL:
-                    carPath = "/TL";
-                    break;
-            }
 
             switch (csv)
             {
@@ -229,7 +149,6 @@ namespace CombineCSV
             for (int j = 0; j < datePaths.Count; j++)
             {
                 resultPaths.Add(logPath + datePaths[j] + carPath + csvPath);
-                System.Console.WriteLine("{0}.Path : {1} ", j+1, datePaths[j]);
             }
 
             return resultPaths;
