@@ -161,33 +161,23 @@ namespace CombineCSV
 
 		static bool CombineCSVFiles(List<string> csvPaths, string resultPath)
 		{
-			// System.IO.StreamWriter fileDest = new System.IO.StreamWriter(resultPath, true);
-
+			//string[] lines = new string[] { };
+			IEnumerable<string> allLines = Enumerable.Empty<string>();
 			for (int i = 0; i < csvPaths.Count; i++)
 			{
 				string file = csvPaths[i];
-				if (file == null)
-				{
-					Console.WriteLine("Error, CSV file is missing.");
-					return false;
-				}
 
-				string[] lines = File.ReadAllLines(file);
-				if (i > 0)
+				if (i == 0)
 				{
-					lines = lines.Skip(1).ToArray();
+					allLines = File.ReadAllLines(file);
 				}
-
-				File.AppendAllLines(resultPath, lines);
-
-				/*
-				foreach (string line in lines)
+				else
 				{
-					fileDest.WriteLine(line);
+					allLines = allLines.Concat(File.ReadAllLines(file).Skip(1));
 				}
-				*/
 			}
-			//fileDest.Close();
+				File.WriteAllLines(resultPath, allLines);
+
 			return true;
 		}
 	}
@@ -198,30 +188,9 @@ namespace CombineCSV
 
 
 
-
-
-/*
-            int j = di.GetDirectories().Length; // 총 날짜 폴더 개수
-            string[] csvPaths = new string[i];
-
-            int x = 0;
-            // foreach 구문을 이용하여 폴더 내부에 있는 폴더정보(GetDirectories()를 이용해)를 가져옵니다.
-            System.Console.WriteLine("-------------------------------------");
-            System.Console.WriteLine("CSV NAME : " + csvPath);
-
-            foreach (var item in di.GetDirectories())
-            {
-                System.Console.WriteLine("{0}. FOLDER NAME : {1}", x + 1, item.Name);
-
-                foreach (var fi in item.GetFiles())
-                {
-                    string fileName = System.IO.Path.GetFileName(fi.Name);
-                    if (fileName == csvPath)
-                    {
-                        csvPaths[x] = fi.FullName; // 차종이 2개면..
-                        x++;
-                    }
-                }
-            }
-            System.Console.WriteLine("-------------------------------------");
- */
+//if (file == null)
+//// 예외처리 구문 수정 -> NULL 이 아니라 다양한 상황 가정해서
+//{
+//	Console.WriteLine("Error, CSV file is missing.");
+//	return false;
+//}
