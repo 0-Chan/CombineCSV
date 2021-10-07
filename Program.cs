@@ -8,7 +8,7 @@ namespace CombineCSV
 {
     class Program
     {
-        public enum CsvCode
+        public enum CsvType
         {
             Gap,
             Glass,
@@ -20,86 +20,110 @@ namespace CombineCSV
             string logPath = "D:/CombineCSV/VALUES";
 
             string dest = string.Empty;
+            string[] carCode = new string[] { "CN7", "CN9" };
             List<string> csvPaths = null;
             bool passFlag = false;
             bool checker = true;
 
-            if (Directory.Exists(logPath))
+            Console.WriteLine("Please enter the date in 'yyyyMMdd' type.");
+            Console.Write("Start Date :");
+            string startInput = Console.ReadLine();
+            Console.Write("End Date :");
+            string endInput = Console.ReadLine();
+
+            checker = DateTime.TryParseExact(startInput, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out DateTime startDT);
+            checker = DateTime.TryParseExact(endInput, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out DateTime endDT);
+            if (checker == false)
             {
-                Console.WriteLine("Please enter the date in 'yyyyMMdd' type.");
-                Console.Write("Start Date :");
-                string startInput = Console.ReadLine();
-                Console.Write("End Date :");
-                string endInput = Console.ReadLine();
-
-                checker = DateTime.TryParseExact(startInput, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out DateTime startDT);
-                checker = DateTime.TryParseExact(endInput, "yyyyMMdd", null, System.Globalization.DateTimeStyles.None, out DateTime endDT);
-                if (checker == false)
-                {
-                    Console.WriteLine("DateTime Parse failed.");
-                    Environment.Exit(1);
-                }
-
-                Console.WriteLine("\n Which values do you want to combine?");
-                do
-                {
-                    Console.Write("1. Gap // 2. Glass // 3. Vehicle (Enter a number.)\n>");
-                    int input = Convert.ToInt32(Console.ReadLine());
-                    input = input - 1;
-                    var myType = (CsvCode)input;
-
-                    switch (myType)
-                    {
-                        case CsvCode.Gap:
-                            Console.WriteLine("Combining 1.Gap CSV files...");
-                            Console.WriteLine("1. CN7");
-                            csvPaths = SearchCsv(logPath, startDT, endDT, "CN7", CsvCode.Gap);
-
-                            Console.Write("Directory to store results.\n>");
-                            dest = Console.ReadLine();
-                            checker = CombineCsvFiles(csvPaths, dest);
-
-                            passFlag = true;
-                            break;
-
-                        case CsvCode.Glass:
-                            Console.WriteLine("Combining 2.Glass CSV files...");
-                            Console.WriteLine("1. CN7");
-                            csvPaths = SearchCsv(logPath, startDT, endDT, "CN7", CsvCode.Glass);
-
-                            Console.Write("Directory to store results.\n>");
-                            dest = Console.ReadLine();
-                            checker = CombineCsvFiles(csvPaths, dest);
-                            passFlag = true;
-                            break;
-
-                        case CsvCode.Vehicle:
-                            Console.WriteLine("Combining 3.Vehicle CSV files...");
-                            Console.WriteLine("1. CN7");
-                            csvPaths = SearchCsv(logPath, startDT, endDT, "CN7", CsvCode.Vehicle);
-
-                            Console.Write("Directory to store results.\n>");
-                            dest = Console.ReadLine();
-                            checker = CombineCsvFiles(csvPaths, dest);
-                            passFlag = true;
-                            break;
-                    }
-                } while (passFlag == false);
+                Console.WriteLine("DateTime Parse failed.");
+                Environment.Exit(1);
             }
+
+            Console.WriteLine("\n Which values do you want to combine?");
+            do
+            {
+                Console.Write("1. Gap // 2. Glass // 3. Vehicle (Enter a number.)\n>");
+                int input = Convert.ToInt32(Console.ReadLine());
+                input = input - 1;
+                var myType = (CsvType)input;
+
+                switch (myType)
+                {
+                    case CsvType.Gap:
+                        Console.WriteLine("Combining 1.Gap CSV files...");
+                        Console.WriteLine("{0}", carCode);
+                        csvPaths = SearchCsv(logPath, startDT, endDT, carCode, "Gap");
+
+                        Console.Write("Directory to store results.\n>");
+                        dest = Console.ReadLine();
+                        checker = CombineCsvFiles(csvPaths, dest);
+                        if (!checker)
+                        {
+                            Console.WriteLine("Combine failed.");
+                            Environment.Exit(1);
+                        }
+                        passFlag = true;
+                        break;
+
+                    case CsvType.Glass:
+                        Console.WriteLine("Combining 2.Glass CSV files...");
+                        Console.WriteLine("{0}", carCode);
+                        csvPaths = SearchCsv(logPath, startDT, endDT, carCode, "Glass");
+
+                        Console.Write("Directory to store results.\n>");
+                        dest = Console.ReadLine();
+                        checker = CombineCsvFiles(csvPaths, dest);
+                        if (!checker)
+                        {
+                            Console.WriteLine("Combine failed.");
+                            Environment.Exit(1);
+                        }
+                        passFlag = true;
+                        break;
+
+                    case CsvType.Vehicle:
+                        Console.WriteLine("Combining 3.Vehicle CSV files...");
+                        Console.WriteLine("{0}", carCode);
+                        csvPaths = SearchCsv(logPath, startDT, endDT, carCode, "Vehicle");
+
+                        Console.Write("Directory to store results.\n>");
+                        dest = Console.ReadLine();
+                        checker = CombineCsvFiles(csvPaths, dest);
+                        if (!checker)
+                        {
+                            Console.WriteLine("Combine failed.");
+                            Environment.Exit(1);
+                        }
+                        passFlag = true;
+                        break;
+                }
+            } while (passFlag == false);
 
             Console.WriteLine("Press any key to EXIT.");
             Console.ReadKey();
         }
 
 
-        static List<string> SearchCsv(string logPath, DateTime startDT, DateTime endDT, string carCode, CsvCode csv)
+        static List<string> SearchCsv(string logPath, DateTime startDT, DateTime endDT, string[] carCode, string csvType, bool particularTime = true)
         {
+            var emptyString = new List<string>();
+            if (!Directory.Exists(logPath))
+            {
+                return emptyString;
+            }
+            if (DateTime.Compare(startDT, endDT) > 0)
+            {
+                return emptyString;
+            }
 
-            // 날짜 잘못 입력 시
-            //logPath exist 
+            if (!particularTime)
+            {
+                startDT = DateTime.MinValue;
+                endDT = DateTime.MaxValue;
+            }
+
             var di = new DirectoryInfo(logPath);
             var datePaths = new List<string>();
-
 
             var directoryNames = di.EnumerateDirectories()
                     .OrderBy(d => d.Name)
@@ -116,11 +140,8 @@ namespace CombineCSV
             int endIndex = directoryNames.BinarySearch(endDT.ToString("yyyyMMdd"));
             if (endIndex < 0)
             {
-                endIndex = ~endIndex -1;
-                endIndex -= 1;
+                endIndex = ~endIndex - 1;
             }
-
-            // endIndex 
 
             for (int k = startIndex; k <= endIndex; k++)
             {
@@ -129,15 +150,15 @@ namespace CombineCSV
 
             string csvPath = string.Empty;
 
-            switch (csv)
+            switch (csvType)
             {
-                case CsvCode.Gap:
+                case "Gap":
                     csvPath = "gap_values.csv";
                     break;
-                case CsvCode.Glass:
+                case "Glass":
                     csvPath = "glass_shift_values.csv";
                     break;
-                case CsvCode.Vehicle:
+                case "Vehicle":
                     csvPath = "vehicle_shift_values.csv";
                     break;
             }
@@ -146,11 +167,14 @@ namespace CombineCSV
             string resultPath = string.Empty;
             for (int j = 0; j < datePaths.Count; j++)
             {
-                resultPath = $"{logPath}/{datePaths[j]}/{carCode}/{csvPath}";
-
-                if (File.Exists(resultPath))
+                for (int k = 0; k < carCode.Length; k++)
                 {
-                    resultPaths.Add(resultPath);
+                    resultPath = $"{logPath}/{datePaths[j]}/{carCode[k]}/{csvPath}";
+
+                    if (File.Exists(resultPath))
+                    {
+                        resultPaths.Add(resultPath);
+                    }
                 }
             }
 
@@ -161,8 +185,10 @@ namespace CombineCSV
         static bool CombineCsvFiles(List<string> csvPaths, string resultPath)
         {
             List<string> allLines = new List<string>();
-
-            // exception 체크
+            if (!csvPaths.Any())
+            {
+                return false;
+            }
 
             allLines.AddRange(File.ReadAllLines(csvPaths[0]));
             for (int i = 1; i < csvPaths.Count; i++)
